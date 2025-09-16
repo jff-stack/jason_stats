@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Jason Francis — Skills Signalboard (Black Glow)</title>
+<link rel="preconnect" href="https://cdn.plot.ly">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0a0f; --card:#0f1117; --ink:#f0f4ff; --muted:#b0b9d6; --accent:#ffffff;
+    --ok:#88ffd2; --grid:#23283b; --glow:rgba(255,255,255,.08); --sq:36px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--ink);
+       background:radial-gradient(1200px 800px at 20% -10%, rgba(255,255,255,.05), transparent 60%),
+                  radial-gradient(1000px 700px at 100% 0%, rgba(255,255,255,.06), transparent 55%),
+                  #090a0e;}
+  .wrap{max-width:1200px;margin:auto;padding:28px}
+  .header{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .title{font-size:34px;line-height:1.1;margin:4px 0 6px 0;text-shadow:0 0 18px rgba(255,255,255,.08)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  input,button{background:#0b0d13;border:1px solid var(--grid);color:var(--ink);padding:8px 10px;border-radius:10px;box-shadow:0 0 0 1px transparent}
+  input:focus,button:hover{outline:none;box-shadow:0 0 0 2px var(--glow)}
+  button{cursor:pointer}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(12,1fr);margin-top:18px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+        border:1px solid var(--grid);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  h3{margin:0 0 8px 0;font-size:18px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap}
+  .kpi{min-width:180px}
+  .metric{font-size:26px;margin:4px 0}
+  .small{font-size:12px;color:var(--muted)}
+  .stars{font-size:20px;letter-spacing:2px;text-shadow:0 0 10px rgba(255,255,255,.12)}
+  .timeline{display:grid;gap:12px}
+  .tcard{position:relative;border-radius:16px;border:1px solid var(--grid);padding:12px;background:#0c0f17;transition:transform .15s ease, border-color .15s ease}
+  .tcard:hover{transform:translateY(-2px);border-color:#3a415a;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .badge{font-size:11px;color:#0b1020;background:var(--ok);padding:3px 8px;border-radius:999px}
+  .softs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:6px}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--grid);border-radius:999px;background:#0b0d13;color:var(--ink);font-size:12px;margin:4px 6px 0 0;transition:transform .15s ease, box-shadow .15s ease}
+  .tag:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(255,255,255,.06)}
+  .chip{padding:6px 10px;border-radius:999px;border:1px dashed var(--grid);margin:4px 6px 0 0}
+  .footer{margin-top:20px;color:var(--muted);font-size:12px}
+  .cta{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--grid);border-radius:12px;padding:8px 12px;text-decoration:none;color:var(--ink)}
+  .cta:hover{text-decoration:underline}
+  /* chessboard */
+  .board{display:grid;grid-template-columns:repeat(8,var(--sq));grid-template-rows:repeat(8,var(--sq));gap:0;border:2px solid var(--grid);border-radius:12px;overflow:hidden;width:calc(var(--sq)*8);}
+  .sq{display:flex;align-items:center;justify-content:center;font-size:calc(var(--sq)*0.6);line-height:1}
+  .dark{background:#101427} .light{background:#0a0d1a}
+  /* character stats as vertical list */
+  .stats{display:grid;grid-template-columns:1fr;gap:10px}
+  .tile{border:1px solid var(--grid);border-radius:16px;padding:12px;background:#0c0f17;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
+  .tile h4{margin:0 0 6px 0;font-size:13px;color:var(--muted)}
+  .bar{height:18px;border-radius:10px;background:rgba(255,255,255,.08);overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,rgba(255,255,255,.95),rgba(255,255,255,.55));box-shadow:0 0 22px rgba(255,255,255,.28) inset}
+  .val{font-size:12px;color:var(--muted);margin-top:6px;text-align:right}
+  .col-4{grid-column:span 4}.col-8{grid-column:span 8}
+  @media (max-width: 900px){.grid{grid-template-columns:repeat(6,1fr)}.col-8{grid-column:span 6}.col-4{grid-column:span 6}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1 class="title">Jason Francis — Skills Signalboard</h1>
+        <div class="controls">
+          <label>Company <input id="company" value="Your Company" /></label>
+          <label>Role <input id="role" value="Analyst / Data" /></label>
+          <label>Focus keywords <input id="keywords" placeholder="SQL, Power BI, forecasting" /></label>
+          <button id="applyBtn">Apply</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+      </div>
+      <div class="kpis">
+        <div class="card kpi">
+          <div class="small">Fit score</div>
+          <div id="matchScore" class="metric">—</div>
+          <div class="small">Keywords × skills × experience</div>
+        </div>
+        <div class="card kpi">
+          <div class="small">Areas of excellence</div>
+          <div id="topAreas" class="metric" style="font-size:18px">—</div>
+        </div>
+        <div class="card kpi">
+          <div class="small">Rating</div>
+          <div class="stars" id="stars">★★★★☆ <span class="small">4.5/5</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card col-4">
+        <h3>Capability radar</h3>
+        <div id="radar" style="height:360px"></div>
+      </div>
+      <div class="card col-8">
+        <h3>Top tools</h3>
+        <div id="bars" style="height:440px"></div>
+      </div>
+      <div class="card col-4">
+        <h3>Soft‑skill chips</h3>
+        <div id="softCloud" class="softs"></div>
+      </div>
+      <div class="card col-4">
+        <h3>Character stats</h3>
+        <div id="stats" class="stats"></div>
+      </div>
+      <div class="card col-4">
+        <h3>Hobbies</h3>
+        <div style="display:flex;justify-content:center"><div id="chess" class="board"></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">Career timeline</h3>
+        <a id="downloadBtn" class="cta" href="#">Download tools snapshot (PNG)</a>
+      </div>
+      <div id="timeline" class="timeline" style="margin-top:10px"></div>
+    </div>
+
+    <div class="footer">Built by Jason Francis • University of Waterloo / Wilfrid Laurier • Single‑file HTML (Plotly + D3).</div>
+  </div>
+
+<script>
+// ----------------- Data (focused + extra timeline) -----------------
+const DATA = {
+  person: { name: "Jason Francis", email: "you@example.com" },
+  skills: [
+    {name:"Python", area:"Programming", level:4.8},
+    {name:"pandas", area:"Data", level:4.8},
+    {name:"NumPy", area:"Data", level:4.3},
+    {name:"TensorFlow", area:"ML", level:3.9},
+    {name:"C/C++", area:"Programming", level:3.7},
+    {name:"React", area:"Programming", level:3.2},
+    {name:"JavaScript", area:"Programming", level:3.2},
+    {name:"HTML/CSS", area:"Programming", level:3.7},
+    {name:"SQL (joins, windows)", area:"Data", level:3.9},
+    {name:"Excel (pivots/XLOOKUP)", area:"BI", level:4.7},
+    {name:"Power BI", area:"BI", level:4.3},
+    {name:"Salesforce", area:"Tools/CRM", level:3.7},
+    {name:"Veeva", area:"Tools/CRM", level:3.7},
+    {name:"AI (general)", area:"ML", level:3.9},
+    {name:"Linux Shell", area:"Programming", level:3.3},
+    {name:"Data Cleaning", area:"Data", level:4.8},
+    {name:"Communication", area:"Soft", level:4.8},
+    {name:"Research & Analysis", area:"Soft", level:4.4},
+    {name:"Project Management", area:"Soft", level:3.8},
+    {name:"Leadership", area:"Soft", level:3.8}
+  ],
+  experiencesCore: [
+    { id:"hcsra", org:"HealthCare Systems R & A", role:"Software Developer (PT)", period:"May–Aug 2025",
+      areas:{Programming:3, Data:4, ML:4, BI:2, Soft:4, "Tools/CRM":1},
+      tools:["Python","TensorFlow","pandas","NumPy"],
+      tags:["ML prototype","Back‑pain assessment","Model iteration","Stakeholder briefs"] },
+    { id:"abbott", org:"ABBOTT — Diabetes Care", role:"SFE/Business Analyst + Dev (Co‑op/PT)", period:"Jan–Aug 2025",
+      areas:{Programming:3, Data:5, ML:2, BI:4, Soft:4, "Tools/CRM":4},
+      tools:["Python","pandas","Excel (pivots/XLOOKUP)","Power BI","Salesforce","Veeva","SQL (joins, windows)"],
+      tags:["KPI workflow","Data quality checks","Weekly reports","Cross‑functional"] },
+    { id:"hrr", org:"Health & Rehab Research Inc.", role:"ML Research Assistant (Co‑op/PT)", period:"May–Dec 2024",
+      areas:{Programming:3, Data:4, ML:5, BI:1, Soft:4, "Tools/CRM":1},
+      tools:["Python","OpenCV","TensorFlow"],
+      tags:["Image recognition","85%+ accuracy","Experiment logs"] }
+  ],
+  experiencesExtra: [
+    { id:"shocals", org:"Shocals", role:"Business Analyst & Web Design (PT)", period:"Nov 2023–Mar 2024",
+      tools:["HTML/CSS","JavaScript","Brand design"],
+      tags:["Brand assets","Animated logos","Pre‑launch"] },
+    { id:"kumon", org:"Kumon", role:"Math & English Tutor", period:"Sep 2022–Jun 2023",
+      tools:["Excel"],
+      tags:["50 students/session","Error‑pattern notes","+30% improvement"] }
+  ],
+  softSkills:[
+    {name:"Quick learner", weight:1.0},
+    {name:"Hard‑working", weight:1.0},
+    {name:"Efficient communicator", weight:1.0},
+    {name:"Research mindset", weight:1.0},
+    {name:"Ownership", weight:0.95}
+  ],
+  statTiles:[
+    {name:"Learning Speed", val:98},
+    {name:"Work Ethic", val:100},
+    {name:"Communication", val:96},
+    {name:"Analysis", val:95},
+    {name:"Ownership", val:93},
+    {name:"Leadership", val:90}
+  ]
+};
+
+const AREAS = ["Programming","Data","ML","BI","Soft"]; // bars render as 0–100% progress for full-width tracks
+
+function avgByArea(){
+  const acc = {Programming:[], Data:[], ML:[], BI:[], Soft:[]};
+  DATA.skills.forEach(s=>{
+    if(AREAS.includes(s.area)) acc[s.area].push(s.level);
+    if(s.area==="Tools/CRM") acc.BI.push(s.level*0.8);
+  });
+  return AREAS.map(a=>({area:a, val: acc[a].length? d3.mean(acc[a]) : 0}));
+}
+
+function topSkills(n=8){
+  return DATA.skills.filter(s=>!s.area.startsWith("Soft"))
+    .sort((a,b)=>b.level-a.level).slice(0,n);
+}
+
+function computeMatchAdjusted(keywords){
+  const corpus = DATA.skills.map(s=>s.name.toLowerCase());
+  const expTools = DATA.experiencesCore.flatMap(e=>e.tools.map(t=>t.toLowerCase()));
+  let coverage = 0, expHit = 0;
+  if(keywords.length){
+    keywords.forEach(k=>{
+      const hit = corpus.some(c=>c.includes(k));
+      const exp = expTools.some(c=>c.includes(k));
+      coverage += hit? 1:0; expHit += exp? 1:0;
+    });
+  }
+  const coveragePct = keywords.length? (100*coverage/keywords.length): 0;
+  const expPct = keywords.length? (100*expHit/keywords.length): 0;
+  const skillAvg = d3.mean(avgByArea().map(x=>x.val))*20; // 0..100
+  let score = 0.55*coveragePct + 0.25*expPct + 0.3*skillAvg;
+  if(corpus.some(c=>c.includes('power bi')) && corpus.some(c=>c.includes('python'))) score += 8;
+  if(corpus.some(c=>c.includes('sql'))) score += 5;
+  return Math.min(100, Math.round(score));
+}
+
+function topAreasString(){
+  return avgByArea().sort((x,y)=>y.val-x.val).slice(0,2).map(x=>x.area).join(" • ");
+}
+
+// Charts
+function drawRadar(){
+  const pts = avgByArea();
+  Plotly.react("radar", [{
+    type:"scatterpolar", r: pts.map(p=>p.val), theta: pts.map(p=>p.area), fill:"toself",
+    hovertemplate:"%{theta}: %{r:.1f}/5<extra></extra>"
+  }], {
+    paper_bgcolor:"transparent", plot_bgcolor:"transparent", margin:{l:20,r:20,t:10,b:10},
+    polar:{bgcolor:"transparent", radialaxis:{range:[0,5], gridcolor:"#2a3046"}, angularaxis:{gridcolor:"#2a3046"}},
+    showlegend:false
+  }, {displayModeBar:false});
+}
+
+function drawBars(highlight=[]) {
+  const data = topSkills(8);
+  const y = data.map(d=>d.name).reverse();
+  const vals5 = data.map(d=>d.level).reverse();
+  const xPct = vals5.map(v=>v*20); // 0..100
+  const bg = new Array(y.length).fill(100);
+  const markerBg = {color:'rgba(255,255,255,0.06)'};
+  const marker = {
+    line:{width:1,color:'rgba(255,255,255,.25)'},
+    opacity: y.map(name=> highlight.length? (highlight.includes(name)?1.0:0.35):0.98)
+  };
+  Plotly.react("bars", [
+    {type:"bar", x:bg, y, orientation:'h', marker:markerBg, hoverinfo:'skip', showlegend:false, offsetgroup:1},
+    {type:"bar", x:xPct, y, orientation:'h', marker, hovertemplate:"%{y}: %{x:.0f}% ( %{customdata:.1f}/5 )<extra></extra>",
+     customdata: vals5, text: vals5.map(v=>v.toFixed(1)+"/5"), textposition:'outside', cliponaxis:false, offsetgroup:1}
+  ], {
+    paper_bgcolor:"transparent", plot_bgcolor:"transparent",
+    margin:{l:190,r:30,t:6,b:30}, bargap:0.12, barmode:'overlay', uniformtext:{mode:'hide', minsize:12},
+    xaxis:{range:[0,100], ticksuffix:'%', gridcolor:"#2a3046", tick0:0, dtick:20, zerolinecolor:'#3a4058'},
+    yaxis:{automargin:true, gridcolor:"#2a3046"},
+    showlegend:false
+  }, {displayModeBar:false});
+}
+
+// Character stats (vertical list)
+function drawStats(){
+  const box=document.getElementById('stats'); box.innerHTML='';
+  DATA.statTiles.forEach(s=>{
+    const tile=document.createElement('div'); tile.className='tile';
+    tile.innerHTML=`<h4>${s.name}</h4><div class="bar"><div class="fill" style="width:${s.val}%"></div></div><div class="val">${s.val}%</div>`;
+    box.appendChild(tile);
+  });
+}
+
+// Soft-skill chips
+function renderSoftCloud(){
+  const box = document.getElementById("softCloud"); box.innerHTML = "";
+  DATA.softSkills.forEach(s=>{ const el=document.createElement('div'); el.className='tag'; el.textContent=s.name; box.appendChild(el); });
+}
+
+// Timeline (core + extra; extras excluded from scoring elsewhere)
+function renderTimeline(){
+  const box = document.getElementById("timeline"); box.innerHTML = "";
+  const render = (e, extra=false)=>{
+    const card=document.createElement('div'); card.className='tcard';
+    card.innerHTML=`<div class=\"row\" style=\"justify-content:space-between\">\n        <div class=\"row\"><strong>${e.org}</strong> • <span class=\"muted\">${e.role}</span></div>\n        <span class=\"badge\">${e.period}</span>\n      </div>\n      <div class=\"softs\">${(e.tools||[]).map(t=>`<span class=\"chip\">${t}</span>`).join("")}</div>\n      <div class=\"small\" style=\"color:var(--muted)\">${(e.tags||[]).join(" • ")}</div>`;
+    if(!extra){ card.onmouseenter=()=>drawBars(e.tools||[]); card.onmouseleave=()=>drawBars(); }
+    box.appendChild(card);
+  };
+  DATA.experiencesCore.forEach(e=>render(e,false));
+  DATA.experiencesExtra.forEach(e=>render(e,true));
+}
+
+// Chessboard aesthetic
+function renderChess(){
+  const board=document.getElementById('chess'); board.innerHTML='';
+  const rows=["♜♞♝♛♚♝♞♜","♟♟♟♟♟♟♟♟","        ","        ","        ","        ","♙♙♙♙♙♙♙♙","♖♘♗♕♔♗♘♖"]; // starting layout
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const sq=document.createElement('div'); const isDark=(r+c)%2; sq.className=`sq ${isDark?'dark':'light'}`; const ch=rows[r][c]; sq.textContent=ch===' '? '': ch; board.appendChild(sq);
+    }
+  }
+}
+
+// Controls
+function applyFocus(){
+  const company=document.getElementById('company').value.trim();
+  const role=document.getElementById('role').value.trim();
+  const kw=document.getElementById('keywords').value.toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
+  const score=computeMatchAdjusted(kw); document.getElementById('matchScore').textContent=kw.length? `${score}%`:'—';
+  document.title=`${DATA.person.name} — ${role} @ ${company}`;
+}
+
+function topAreasUI(){ document.getElementById('topAreas').textContent = topAreasString(); }
+
+function downloadSnapshot(){ const link=document.getElementById('downloadBtn'); Plotly.toImage(document.getElementById('bars'),{format:'png',height:520,width:960}).then(url=>{link.href=url; link.download='jason_Francis_tools.png';}); }
+
+// ----------------- Self-tests (lightweight) -----------------
+function selfTest(){
+  const tests = [];
+  const ok = (name, cond) => tests.push({name, pass: !!cond});
+  try{ ok('Plotly loaded', !!window.Plotly); }catch{ ok('Plotly loaded', false); }
+  ok('Bars container exists', !!document.getElementById('bars'));
+  ok('Radar container exists', !!document.getElementById('radar'));
+  ok('Top skills length > 0', topSkills(3).length>0);
+  ok('Compute match returns 0..100', (()=>{ const v=computeMatchAdjusted(['python','sql']); return v>=0 && v<=100; })());
+  // After rendering chess, we should have 64 squares
+  renderChess();
+  ok('Chess squares == 64', document.getElementById('chess').children.length === 64);
+  // topAreasString should not be empty
+  ok('Top areas string', topAreasString().length > 0);
+  console.table(tests);
+}
+
+function init(){
+  drawRadar(); drawBars(); drawStats(); renderSoftCloud(); renderTimeline(); renderChess(); topAreasUI();
+  document.getElementById('applyBtn').onclick=applyFocus;
+  document.getElementById('resetBtn').onclick=()=>{
+    document.getElementById('company').value='Your Company';
+    document.getElementById('role').value='Analyst / Data';
+    document.getElementById('keywords').value='';
+    applyFocus();
+  };
+  downloadSnapshot();
+  selfTest();
+}
+init();
+</script>
+</body>
+</html>
