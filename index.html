@@ -307,11 +307,10 @@ function renderChess(){
 
 // Controls
 function applyFocus(){
-  const company=document.getElementById('company').value.trim();
   const role=document.getElementById('role').value.trim();
   const kw=document.getElementById('keywords').value.toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
   const score=computeMatchAdjusted(kw); document.getElementById('matchScore').textContent=kw.length? `${score}%`:'—';
-  document.title=`${DATA.person.name} — ${role} @ ${company}`;
+  document.title=`${DATA.person.name} — ${role}`;
 }
 
 function topAreasUI(){ document.getElementById('topAreas').textContent = topAreasString(); }
